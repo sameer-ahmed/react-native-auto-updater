@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		4283E7961DA3011B0020D267 /* SSZipArchive.m in Sources */ = {isa = PBXBuildFile; fileRef = 4283E78A1DA3011B0020D267 /* SSZipArchive.m */; };
 		4283E7971DA3011B0020D267 /* ioapi.c in Sources */ = {isa = PBXBuildFile; fileRef = 4283E78E1DA3011B0020D267 /* ioapi.c */; };
 		4283E7981DA3011B0020D267 /* mztools.c in Sources */ = {isa = PBXBuildFile; fileRef = 4283E7901DA3011B0020D267 /* mztools.c */; };
 		4283E7991DA3011B0020D267 /* unzip.c in Sources */ = {isa = PBXBuildFile; fileRef = 4283E7921DA3011B0020D267 /* unzip.c */; };
@@ -29,8 +28,6 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		4283E78A1DA3011B0020D267 /* SSZipArchive.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SSZipArchive.m; sourceTree = "<group>"; };
-		4283E78B1DA3011B0020D267 /* SSZipArchive.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SSZipArchive.h; sourceTree = "<group>"; };
 		4283E78D1DA3011B0020D267 /* crypt.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = crypt.h; sourceTree = "<group>"; };
 		4283E78E1DA3011B0020D267 /* ioapi.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ioapi.c; sourceTree = "<group>"; };
 		4283E78F1DA3011B0020D267 /* ioapi.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ioapi.h; sourceTree = "<group>"; };
@@ -93,8 +90,6 @@
 		B781E7501C52EC0100F23A25 /* ReactNativeAutoUpdater */ = {
 			isa = PBXGroup;
 			children = (
-				4283E78A1DA3011B0020D267 /* SSZipArchive.m */,
-				4283E78B1DA3011B0020D267 /* SSZipArchive.h */,
 				B781E7601C53023300F23A25 /* ReactNativeAutoUpdater.h */,
 				B781E7611C53023300F23A25 /* ReactNativeAutoUpdater.m */,
 				B781E7621C53023300F23A25 /* StatusBarNotification.h */,
@@ -165,7 +160,6 @@
 				B781E7641C53023300F23A25 /* ReactNativeAutoUpdater.m in Sources */,
 				4283E7971DA3011B0020D267 /* ioapi.c in Sources */,
 				4283E79A1DA3011B0020D267 /* zip.c in Sources */,
-				4283E7961DA3011B0020D267 /* SSZipArchive.m in Sources */,
 				4283E7981DA3011B0020D267 /* mztools.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
