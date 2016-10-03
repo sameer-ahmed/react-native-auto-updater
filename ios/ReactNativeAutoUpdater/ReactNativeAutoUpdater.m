@@ -9,6 +9,7 @@
 #import "ReactNativeAutoUpdater.h"
 #import "StatusBarNotification.h"
 #import "RCTBridge.h"
+#import "SSZipArchive.h"
 
 NSString* const ReactNativeAutoUpdaterLastUpdateCheckDate = @"ReactNativeAutoUpdater Last Update Check Date";
 NSString* const ReactNativeAutoUpdaterCurrentJSCodeMetadata = @"ReactNativeAutoUpdater Current JS Code Metadata";
@@ -449,21 +450,97 @@ static bool isFirstAccess = YES;
                                backgroundColor:[StatusBarNotification successColor]
                                       autoHide:YES];
     }
-    NSError* error;
     
-    NSData* data = [NSData dataWithContentsOfURL:location];
-    NSString* filename = [NSString stringWithFormat:@"%@/%@", [self createCodeDirectory], @"main.jsbundle"];
+    NSHTTPURLResponse *response = (NSHTTPURLResponse*) downloadTask.response;
     
-    if ([data writeToFile:filename atomically:YES]) {
+    if (response == nil) {
+        [StatusBarNotification showWithMessage:NSLocalizedString(@"Download Error.", nil)
+                               backgroundColor:[StatusBarNotification successColor]
+                                      autoHide:YES];
+        return;
+    }
+    
+    if (response.statusCode > 299 && response.statusCode < 200) {
+        [StatusBarNotification showWithMessage:NSLocalizedString(@"Download Error.", nil)
+                               backgroundColor:[StatusBarNotification successColor]
+                                      autoHide:YES];
+        NSLog(@"%@: %@", @"wrong response http status code", response.statusCode);
+        return;
+    }
+    
+    NSString *contentType = [response.allHeaderFields valueForKey:@"Content-Type"];
+    
+    if (contentType == nil || [contentType isEqualToString:@""] || ![contentType isEqualToString:@"application/zip"]) {
+        [StatusBarNotification showWithMessage:NSLocalizedString(@"Download Error.", nil)
+                               backgroundColor:[StatusBarNotification successColor]
+                                      autoHide:YES];
+        NSLog(@"wrong content type (%@), expected (%@)", contentType, @"application/zip");
+        return;
+    }
+    
+    NSString* tempUnzipPath = [NSString stringWithFormat:@"%@%@", NSTemporaryDirectory(), @"payload"];
+    
+    if ([SSZipArchive unzipFileAtPath:[location path] toDestination:tempUnzipPath overwrite:YES password:@"" error:nil delegate:nil]) {
+        
+        NSArray *dirFiles = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:tempUnzipPath error:nil];
+        NSArray *bundleFiles = [dirFiles filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"self ENDSWITH '.jsbundle'"]];
+        
+        if (bundleFiles.count > 1) {
+            [StatusBarNotification showWithMessage:NSLocalizedString(@"Update Error.", nil)
+                                   backgroundColor:[StatusBarNotification successColor]
+                                          autoHide:YES];
+            NSLog(@"more than one bundle file in payload");
+            return;
+        }
+        
+        NSString* mainBundle = [NSString stringWithFormat:@"%@/%@", [self createCodeDirectory], @"main.jsbundle"];
+        
+        NSError* error = nil;
+        [[NSFileManager defaultManager] removeItemAtPath:mainBundle error:nil];
+        [[NSFileManager defaultManager] moveItemAtPath:[NSString stringWithFormat:@"%@/%@", tempUnzipPath, [bundleFiles firstObject]] toPath:mainBundle error:&error];
+        
+        if (error != nil) {
+            [StatusBarNotification showWithMessage:NSLocalizedString(@"Update Error.", nil)
+                                   backgroundColor:[StatusBarNotification successColor]
+                                          autoHide:YES];
+            NSLog(@"not able to write main bundle at library path: %@", error);
+            return;
+        }
+        
+        NSArray *nonBundleFiles = [dirFiles filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"NOT(self ENDSWITH '.jsbundle')"]];
+        
+        for (NSString* file in nonBundleFiles) {
+            NSString* source = [NSString stringWithFormat:@"%@/%@", tempUnzipPath, file];
+            NSString* destination = [NSString stringWithFormat:@"%@/%@", [self createCodeDirectory], file];
+            [[NSFileManager defaultManager] removeItemAtPath:destination error:nil];
+            [[NSFileManager defaultManager] moveItemAtPath:source toPath:destination error:&error];
+            
+            if (error != nil) {
+                [StatusBarNotification showWithMessage:NSLocalizedString(@"Update Error.", nil)
+                                       backgroundColor:[StatusBarNotification successColor]
+                                              autoHide:YES];
+                NSLog(@"not able to write main bundle at library path");
+                return;
+            }
+        }
+        
+        [[NSFileManager defaultManager] removeItemAtPath:tempUnzipPath error:nil];
+        
         [[NSUserDefaults standardUserDefaults] setObject:self.updateMetadata forKey:ReactNativeAutoUpdaterCurrentJSCodeMetadata];
-      if ([self.delegate respondsToSelector:@selector(ReactNativeAutoUpdater:updateDownloadedToURL:currentVersion:)]) {
-        NSString* currentVersion = self.updateMetadata[@"version"];
-        [self.delegate ReactNativeAutoUpdater:self updateDownloadedToURL:[NSURL URLWithString:[NSString stringWithFormat:@"file://%@", filename]] currentVersion:currentVersion];
-      }
+        if ([self.delegate respondsToSelector:@selector(ReactNativeAutoUpdater:updateDownloadedToURL:currentVersion:)]) {
+            NSString* currentVersion = self.updateMetadata[@"version"];
+            [self.delegate ReactNativeAutoUpdater:self updateDownloadedToURL:[NSURL URLWithString:[NSString stringWithFormat:@"file://%@", mainBundle]] currentVersion:currentVersion];
+        }
+        
+        
+    } else {
+        [StatusBarNotification showWithMessage:NSLocalizedString(@"Update Error.", nil)
+                               backgroundColor:[StatusBarNotification successColor]
+                                      autoHide:YES];
+        NSLog(@"mailformed zip file");
+        return;
     }
-    else {
-        NSLog(@"[ReactNativeAutoUpdater]: Update save failed - %@.", error.localizedDescription);
-    }
+    
 }
 
 - (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task didCompleteWithError:(NSError *)error {
